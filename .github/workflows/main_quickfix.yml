@@ -21,10 +21,11 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
+          node-version: "20.x"
 
       - name: npm install, build, and test
         run: |
+          cd backend
           npm install
           npm run build --if-present
           npm run test --if-present
@@ -33,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: ./backend
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,7 +48,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -55,11 +56,10 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DB21C0D26EFF489B93A4B21602CBB343 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_78DF1B1AA6E04AAF87B404394B917C50 }}
 
-      - name: 'Deploy to Azure Web App'
+      - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'Quickfix'
-          slot-name: 'Production'
+          app-name: "Quickfix"
+          slot-name: "Production"
           package: .
-          
