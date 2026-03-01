@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://quickfix-eshnafcudrbdfch8.eastasia-01.azurewebsites.net",
+  baseURL:
+    "https://quickfix-eshnafcudrbdfch8.eastasia-01.azurewebsites.net/api",
 });
 
 api.interceptors.request.use((config) => {
