@@ -17,7 +17,9 @@ export default function Navbar() {
       </Link>
       {user && (
         <div className="flex items-center gap-6">
-          <span className="text-sm">Hi, {user.name}</span>
+          <span className="text-sm">
+            Hi, {user.name} [ {user.role} ]
+          </span>
           {user.role === "admin" && (
             <Link to="/admin" className="text-sm underline hover:text-blue-200">
               Admin Panel
