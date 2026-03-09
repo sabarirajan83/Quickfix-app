@@ -1,8 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL:
-    "https://quickfix-eshnafcudrbdfch8.eastasia-01.azurewebsites.net/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
 });
 
 api.interceptors.request.use((config) => {

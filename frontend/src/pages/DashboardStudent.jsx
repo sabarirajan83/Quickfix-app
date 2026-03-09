@@ -10,6 +10,7 @@ const CATEGORIES = [
   "Internet",
   "Other",
 ];
+const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
 
 export default function DashboardStudent() {
   const [tickets, setTickets] = useState([]);
@@ -17,6 +18,7 @@ export default function DashboardStudent() {
     title: "",
     roomNumber: "",
     category: "Plumbing",
+    priority: "Medium",
     description: "",
   });
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,7 @@ export default function DashboardStudent() {
         title: "",
         roomNumber: "",
         category: "Plumbing",
+        priority: "Medium",
         description: "",
       });
       fetchTickets();
@@ -61,6 +64,7 @@ export default function DashboardStudent() {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         Raise a Maintenance Ticket
       </h2>
+
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl shadow p-6 mb-8 space-y-4"
@@ -81,15 +85,35 @@ export default function DashboardStudent() {
           value={form.roomNumber}
           onChange={(e) => setForm({ ...form, roomNumber: e.target.value })}
         />
-        <select
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          {CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
+
+        {/* Category and Priority side by side */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Category</label>
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Priority</label>
+            <select
+              value={form.priority}
+              onChange={(e) => setForm({ ...form, priority: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              {PRIORITIES.map((p) => (
+                <option key={p}>{p}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <textarea
           placeholder="Describe the issue..."
           required
@@ -107,6 +131,7 @@ export default function DashboardStudent() {
         </button>
         {message && <p className="text-sm mt-1">{message}</p>}
       </form>
+
       <h2 className="text-xl font-bold text-gray-800 mb-4">
         My Tickets ({tickets.length})
       </h2>
@@ -115,7 +140,7 @@ export default function DashboardStudent() {
       ) : (
         <div className="space-y-4">
           {tickets.map((t) => (
-            <TicketCard key={t._id} ticket={t} />
+            <TicketCard key={t._id} ticket={t} isAdmin={false} />
           ))}
         </div>
       )}
