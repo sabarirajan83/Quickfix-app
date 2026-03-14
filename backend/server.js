@@ -12,8 +12,8 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:5173", // local development
-      "https://yellow-moss-0f7d27800.4.azurestaticapps.net", // your Azure frontend URL
+      "http://localhost:5173",
+      "https://yellow-moss-0f7d27800.azurestaticapps.net",
     ],
     credentials: true,
   }),
