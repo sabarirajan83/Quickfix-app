@@ -25,7 +25,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build And Deploy
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build
+        run: |
+          cd frontend
+          npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+
+      - name: Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -35,9 +47,7 @@ jobs:
           app_location: "./frontend"
           api_location: ""
           output_location: "dist"
-          app_build_command: "npm run build"
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          skip_app_build: true
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
