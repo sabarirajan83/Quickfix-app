@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../utils/api";
 import TicketCard from "../components/TicketCard";
-import { Plus, X, Ticket, ChevronDown } from "lucide-react";
+import RatingPrompt from "../components/RatingPrompt";
+import { Plus, X, Ticket } from "lucide-react";
 
 const CATEGORIES = [
   "Plumbing",
@@ -12,7 +13,6 @@ const CATEGORIES = [
   "Other",
 ];
 const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
-
 const PRIORITY_COLORS = {
   Low: "#6b7280",
   Medium: "#3b82f6",
@@ -71,6 +71,12 @@ export default function DashboardStudent() {
     }
   };
 
+  const handleRated = (updatedTicket) => {
+    setTickets((prev) =>
+      prev.map((t) => (t._id === updatedTicket._id ? updatedTicket : t)),
+    );
+  };
+
   const filtered =
     filter === "All" ? tickets : tickets.filter((t) => t.status === filter);
 
@@ -113,14 +119,13 @@ export default function DashboardStudent() {
         <button
           onClick={() => setShowForm(!showForm)}
           className="btn btn-primary"
-          style={{ gap: "6px" }}
         >
           {showForm ? <X size={15} /> : <Plus size={15} />}
           {showForm ? "Cancel" : "New Ticket"}
         </button>
       </div>
 
-      {/* Success / Error toast */}
+      {/* Toast messages */}
       {message === "success" && (
         <div
           style={{
@@ -132,13 +137,10 @@ export default function DashboardStudent() {
             color: "#10b981",
             fontSize: "14px",
             fontWeight: 600,
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
             animation: "fadeInUp 0.3s ease",
           }}
         >
-          ✅ Ticket raised successfully! We'll look into it soon.
+          ✅ Ticket raised successfully!
         </div>
       )}
       {message === "error" && (
@@ -158,7 +160,7 @@ export default function DashboardStudent() {
         </div>
       )}
 
-      {/* New Ticket Form */}
+      {/* New ticket form */}
       {showForm && (
         <div
           className="card"
@@ -167,7 +169,6 @@ export default function DashboardStudent() {
             marginBottom: "24px",
             animation: "fadeInUp 0.35s ease",
             borderColor: "var(--accent)",
-            borderWidth: "1px",
           }}
         >
           <h2
@@ -185,7 +186,6 @@ export default function DashboardStudent() {
             <Ticket size={18} style={{ color: "var(--accent)" }} />
             Raise a Maintenance Ticket
           </h2>
-
           <form
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
@@ -194,14 +194,13 @@ export default function DashboardStudent() {
               <label className="label">Issue Title</label>
               <input
                 type="text"
-                placeholder="e.g. Tap is leaking in bathroom"
+                placeholder="e.g. Tap is leaking"
                 required
                 className="input"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
             </div>
-
             <div
               style={{
                 display: "grid",
@@ -238,7 +237,7 @@ export default function DashboardStudent() {
               </div>
             </div>
 
-            {/* Priority selector */}
+            {/* Priority picker */}
             <div>
               <label className="label">Priority Level</label>
               <div
@@ -291,7 +290,6 @@ export default function DashboardStudent() {
                 }
               />
             </div>
-
             <div
               style={{
                 display: "flex",
@@ -409,13 +407,17 @@ export default function DashboardStudent() {
           )}
         </div>
       ) : (
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-          className="stagger"
-        >
-          {filtered.map((t) => (
-            <div key={t._id} className="animate-fadeInUp">
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          {filtered.map((t, i) => (
+            <div
+              key={t._id}
+              style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both` }}
+            >
               <TicketCard ticket={t} isAdmin={false} />
+              {/* Show rating prompt only for resolved unrated tickets */}
+              {t.status === "Resolved" && (
+                <RatingPrompt ticket={t} onRated={handleRated} />
+              )}
             </div>
           ))}
         </div>

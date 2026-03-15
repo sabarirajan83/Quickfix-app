@@ -1,12 +1,10 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
-// Verifies the JWT token and attaches the user to req
 const protect = async (req, res, next) => {
-  let token = req.headers.authorization?.split(" ")[1]; // Bearer <token>
+  let token = req.headers.authorization?.split(" ")[1];
   if (!token)
     return res.status(401).json({ message: "Not authorized, no token" });
-
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = await User.findById(decoded.id).select("-password");
@@ -16,10 +14,20 @@ const protect = async (req, res, next) => {
   }
 };
 
-// Only allows admin role through
 const adminOnly = (req, res, next) => {
   if (req.user?.role === "admin") return next();
   res.status(403).json({ message: "Admin access only" });
 };
 
-module.exports = { protect, adminOnly };
+const staffOnly = (req, res, next) => {
+  if (req.user?.role === "staff") return next();
+  res.status(403).json({ message: "Staff access only" });
+};
+
+// Admin OR Staff can access
+const adminOrStaff = (req, res, next) => {
+  if (req.user?.role === "admin" || req.user?.role === "staff") return next();
+  res.status(403).json({ message: "Admin or Staff access only" });
+};
+
+module.exports = { protect, adminOnly, staffOnly, adminOrStaff };

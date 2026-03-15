@@ -9,19 +9,21 @@ const {
   addComment,
   getStats,
 } = require("../controllers/ticketController");
+const { submitRating } = require("../controllers/ratingController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
-// STEP 1 — Static named routes MUST come first before any /:id routes
+// Static named routes first
 router.get("/stats", protect, adminOnly, getStats);
 router.get("/history", protect, adminOnly, getTicketHistory);
 router.get("/my", protect, getMyTickets);
 
-// STEP 2 — General routes
+// General routes
 router.post("/", protect, createTicket);
 router.get("/", protect, adminOnly, getAllTickets);
 
-// STEP 3 — Dynamic /:id routes MUST come last
+// Dynamic id routes last
 router.put("/:id", protect, adminOnly, updateTicketStatus);
 router.post("/:id/comment", protect, adminOnly, addComment);
+router.post("/:id/rate", protect, submitRating); // resident rates resolved ticket
 
 module.exports = router;

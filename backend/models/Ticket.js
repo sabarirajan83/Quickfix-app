@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const commentSchema = new mongoose.Schema({
   text: { type: String, required: true },
-  addedBy: { type: String, required: true }, // admin name
+  addedBy: { type: String, required: true },
   addedAt: { type: Date, default: Date.now },
 });
 
@@ -33,13 +33,22 @@ const ticketSchema = new mongoose.Schema(
       enum: ["Low", "Medium", "High", "Urgent"],
       default: "Medium",
     },
-    comments: [commentSchema], // array of admin comments
-    resolvedAt: { type: Date, default: null }, // track when resolved
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+    comments: [commentSchema],
+    resolvedAt: { type: Date, default: null },
     resident: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+    // Satisfaction rating fields
+    rating: { type: Number, min: 1, max: 5, default: null },
+    ratingFeedback: { type: String, default: "" },
+    ratedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

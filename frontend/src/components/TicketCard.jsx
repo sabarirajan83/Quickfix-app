@@ -9,7 +9,9 @@ import {
   Send,
   Clock,
   RefreshCw,
+  UserCheck,
 } from "lucide-react";
+import StaffAssignDropdown from "./StaffAssignDropdown";
 
 dayjs.extend(relativeTime);
 
@@ -44,31 +46,41 @@ const STATUS_CONFIG = {
 export default function TicketCard({
   ticket,
   isAdmin,
+  isStaff,
   onStatusChange,
   onCommentAdded,
+  onAssigned,
 }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [localTicket, setLocalTicket] = useState(ticket);
 
-  const priority = PRIORITY_CONFIG[ticket.priority] || PRIORITY_CONFIG.Medium;
-  const status = STATUS_CONFIG[ticket.status] || STATUS_CONFIG["Pending"];
+  const priority =
+    PRIORITY_CONFIG[localTicket.priority] || PRIORITY_CONFIG.Medium;
+  const status = STATUS_CONFIG[localTicket.status] || STATUS_CONFIG["Pending"];
 
   const handleAddComment = async () => {
     if (!commentText.trim()) return;
     setSubmitting(true);
     try {
-      const { data } = await api.post(`/tickets/${ticket._id}/comment`, {
+      const { data } = await api.post(`/tickets/${localTicket._id}/comment`, {
         text: commentText,
       });
       setCommentText("");
+      setLocalTicket(data);
       if (onCommentAdded) onCommentAdded(data);
     } catch {
       alert("Failed to add comment");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleAssigned = (updatedTicket) => {
+    setLocalTicket(updatedTicket);
+    if (onAssigned) onAssigned(updatedTicket);
   };
 
   return (
@@ -120,10 +132,17 @@ export default function TicketCard({
             marginRight: "12px",
           }}
         >
-          {ticket.title}
+          {localTicket.title}
         </h3>
-        <div style={{ display: "flex", gap: "6px", flexShrink: 0 }}>
-          {/* Priority badge */}
+        <div
+          style={{
+            display: "flex",
+            gap: "6px",
+            flexShrink: 0,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
           <span
             style={{
               background: priority.bg,
@@ -133,7 +152,6 @@ export default function TicketCard({
               fontSize: "11px",
               fontWeight: 700,
               fontFamily: "Syne",
-              letterSpacing: "0.03em",
               display: "flex",
               alignItems: "center",
               gap: "4px",
@@ -148,9 +166,8 @@ export default function TicketCard({
                 display: "inline-block",
               }}
             />
-            {ticket.priority}
+            {localTicket.priority}
           </span>
-          {/* Status badge */}
           <span
             style={{
               background: status.bg,
@@ -167,7 +184,7 @@ export default function TicketCard({
         </div>
       </div>
 
-      {/* Meta info */}
+      {/* Meta */}
       <div
         style={{
           display: "flex",
@@ -176,23 +193,35 @@ export default function TicketCard({
           marginBottom: "8px",
         }}
       >
-        <span
-          style={{
-            fontSize: "13px",
-            color: "var(--text-secondary)",
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          🏠 <strong>Room {ticket.roomNumber}</strong>
+        <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+          🏠 <strong>Room {localTicket.roomNumber}</strong>
         </span>
         <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-          🗂 {ticket.category}
+          🗂 {localTicket.category}
         </span>
-        {isAdmin && ticket.resident && (
+        {isAdmin && localTicket.resident && (
           <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-            👤 {ticket.resident.name}
+            👤 {localTicket.resident.name}
+          </span>
+        )}
+        {/* Assigned staff badge */}
+        {localTicket.assignedTo && (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "12px",
+              color: "var(--accent)",
+              background: "var(--accent-light)",
+              padding: "2px 10px",
+              borderRadius: "100px",
+            }}
+          >
+            <UserCheck size={11} />
+            {localTicket.assignedTo.name}
+            {localTicket.assignedTo.specialty &&
+              ` — ${localTicket.assignedTo.specialty}`}
           </span>
         )}
       </div>
@@ -206,17 +235,11 @@ export default function TicketCard({
           marginBottom: "12px",
         }}
       >
-        {ticket.description}
+        {localTicket.description}
       </p>
 
       {/* Timestamps */}
-      <div
-        style={{
-          display: "flex",
-          gap: "16px",
-          marginBottom: isAdmin || ticket.comments?.length > 0 ? "14px" : "0",
-        }}
-      >
+      <div style={{ display: "flex", gap: "16px", marginBottom: "14px" }}>
         <span
           style={{
             fontSize: "11px",
@@ -226,9 +249,9 @@ export default function TicketCard({
             gap: "4px",
           }}
         >
-          <Clock size={10} /> Raised {dayjs(ticket.createdAt).fromNow()}
+          <Clock size={10} /> Raised {dayjs(localTicket.createdAt).fromNow()}
         </span>
-        {ticket.updatedAt !== ticket.createdAt && (
+        {localTicket.updatedAt !== localTicket.createdAt && (
           <span
             style={{
               fontSize: "11px",
@@ -238,20 +261,54 @@ export default function TicketCard({
               gap: "4px",
             }}
           >
-            <RefreshCw size={10} /> Updated {dayjs(ticket.updatedAt).fromNow()}
+            <RefreshCw size={10} /> Updated{" "}
+            {dayjs(localTicket.updatedAt).fromNow()}
           </span>
         )}
       </div>
 
       {/* Admin controls */}
       {isAdmin && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "12px",
+            marginBottom: "12px",
+          }}
+        >
+          <div>
+            <label className="label">Update Status</label>
+            <select
+              value={localTicket.status}
+              onChange={(e) => {
+                setLocalTicket({ ...localTicket, status: e.target.value });
+                onStatusChange(localTicket._id, e.target.value);
+              }}
+              className="input"
+            >
+              <option>Pending</option>
+              <option>In Progress</option>
+              <option>Resolved</option>
+            </select>
+          </div>
+          <StaffAssignDropdown
+            ticket={localTicket}
+            onAssigned={handleAssigned}
+          />
+        </div>
+      )}
+
+      {/* Staff controls — can only update status */}
+      {isStaff && (
         <div style={{ marginBottom: "12px" }}>
-          <label className="label" style={{ marginBottom: "6px" }}>
-            Update Status
-          </label>
+          <label className="label">Update Status</label>
           <select
-            value={ticket.status}
-            onChange={(e) => onStatusChange(ticket._id, e.target.value)}
+            value={localTicket.status}
+            onChange={(e) => {
+              setLocalTicket({ ...localTicket, status: e.target.value });
+              onStatusChange(localTicket._id, e.target.value);
+            }}
             className="input"
             style={{ maxWidth: "220px" }}
           >
@@ -284,8 +341,8 @@ export default function TicketCard({
         }}
       >
         <MessageSquare size={12} />
-        {ticket.comments?.length > 0
-          ? `${ticket.comments.length} Comment${ticket.comments.length > 1 ? "s" : ""}`
+        {localTicket.comments?.length > 0
+          ? `${localTicket.comments.length} Comment${localTicket.comments.length > 1 ? "s" : ""}`
           : "Comments"}
         {showComments ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
       </button>
@@ -301,7 +358,7 @@ export default function TicketCard({
               marginBottom: "12px",
             }}
           >
-            {ticket.comments?.length === 0 && (
+            {localTicket.comments?.length === 0 && (
               <p
                 style={{
                   fontSize: "12px",
@@ -312,7 +369,7 @@ export default function TicketCard({
                 No comments yet.
               </p>
             )}
-            {ticket.comments?.map((c, i) => (
+            {localTicket.comments?.map((c, i) => (
               <div
                 key={i}
                 style={{
@@ -339,11 +396,12 @@ export default function TicketCard({
             ))}
           </div>
 
-          {isAdmin && (
+          {/* Add comment — Admin or Staff */}
+          {(isAdmin || isStaff) && (
             <div style={{ display: "flex", gap: "8px" }}>
               <input
                 type="text"
-                placeholder="Add a note for the resident..."
+                placeholder="Add a note..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddComment()}

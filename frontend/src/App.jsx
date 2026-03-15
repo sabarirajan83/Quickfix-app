@@ -3,22 +3,23 @@ import { useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import DashboardStudent from "./pages/DashboardStudent";
 import DashboardAdmin from "./pages/DashboardAdmin";
+import DashboardStaff from "./pages/DashboardStaff";
 import Navbar from "./components/Navbar";
 
-// Redirect logged-in users away from login page
 const PublicRoute = ({ children }) => {
   const { user } = useAuth();
-  if (user)
-    return <Navigate to={user.role === "admin" ? "/admin" : "/dashboard"} />;
+  if (user) {
+    if (user.role === "admin") return <Navigate to="/admin" />;
+    if (user.role === "staff") return <Navigate to="/staff" />;
+    return <Navigate to="/dashboard" />;
+  }
   return children;
 };
 
-// Protect private routes
-const PrivateRoute = ({ children, adminRequired }) => {
+const PrivateRoute = ({ children, roles }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
-  if (adminRequired && user.role !== "admin")
-    return <Navigate to="/dashboard" />;
+  if (roles && !roles.includes(user.role)) return <Navigate to="/login" />;
   return children;
 };
 
@@ -38,7 +39,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["resident"]}>
               <DashboardStudent />
             </PrivateRoute>
           }
@@ -46,8 +47,16 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <PrivateRoute adminRequired>
+            <PrivateRoute roles={["admin"]}>
               <DashboardAdmin />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/staff"
+          element={
+            <PrivateRoute roles={["staff"]}>
+              <DashboardStaff />
             </PrivateRoute>
           }
         />

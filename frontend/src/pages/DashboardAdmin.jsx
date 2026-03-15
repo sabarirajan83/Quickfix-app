@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../utils/api";
 import TicketCard from "../components/TicketCard";
-import { LayoutDashboard, History, Search, X } from "lucide-react";
+import StaffManager from "../components/StaffManager";
+import AnalyticsTab from "./AnalyticsTab";
+import {
+  LayoutDashboard,
+  History,
+  Search,
+  X,
+  Users,
+  BarChart2,
+} from "lucide-react";
 
 export default function DashboardAdmin() {
   const [tickets, setTickets] = useState([]);
@@ -85,6 +94,10 @@ export default function DashboardAdmin() {
     setHistory((p) => p.map((t) => (t._id === updated._id ? updated : t)));
   };
 
+  const handleAssigned = (updated) => {
+    setTickets((p) => p.map((t) => (t._id === updated._id ? updated : t)));
+  };
+
   const handleLoadMore = async () => {
     const nextPage = page + 1;
     setLoadingMore(true);
@@ -103,7 +116,6 @@ export default function DashboardAdmin() {
     }
   };
 
-  // Search filter
   const filteredTickets = tickets
     .filter((t) => filter === "All" || t.status === filter)
     .filter(
@@ -120,7 +132,6 @@ export default function DashboardAdmin() {
       label: "Pending",
       value: stats.pending,
       color: "#f59e0b",
-      bg: "var(--pending-bg)",
       cls: "pending",
       icon: "🕐",
     },
@@ -129,7 +140,6 @@ export default function DashboardAdmin() {
       label: "In Progress",
       value: stats.inProgress,
       color: "#3b82f6",
-      bg: "var(--inprogress-bg)",
       cls: "progress",
       icon: "⚙️",
     },
@@ -138,15 +148,24 @@ export default function DashboardAdmin() {
       label: "Resolved",
       value: stats.resolved,
       color: "#10b981",
-      bg: "var(--resolved-bg)",
       cls: "resolved",
       icon: "✅",
     },
   ];
 
+  const TABS = [
+    {
+      id: "dashboard",
+      icon: <LayoutDashboard size={14} />,
+      label: "Dashboard",
+    },
+    { id: "history", icon: <History size={14} />, label: "History" },
+    { id: "staff", icon: <Users size={14} />, label: "Staff" },
+    { id: "analytics", icon: <BarChart2 size={14} />, label: "Analytics" },
+  ];
+
   return (
     <div style={{ maxWidth: "900px", margin: "0 auto", padding: "32px 20px" }}>
-      {/* Header */}
       <div style={{ marginBottom: "28px", animation: "fadeInUp 0.4s ease" }}>
         <h1
           style={{
@@ -160,7 +179,7 @@ export default function DashboardAdmin() {
           Admin Dashboard
         </h1>
         <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-          Manage and resolve all maintenance tickets
+          Manage tickets, staff and maintenance operations
         </p>
       </div>
 
@@ -178,14 +197,7 @@ export default function DashboardAdmin() {
           animation: "fadeInUp 0.4s ease 0.05s both",
         }}
       >
-        {[
-          {
-            id: "dashboard",
-            icon: <LayoutDashboard size={14} />,
-            label: "Dashboard",
-          },
-          { id: "history", icon: <History size={14} />, label: "History" },
-        ].map((tab) => (
+        {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -219,7 +231,6 @@ export default function DashboardAdmin() {
       {/* DASHBOARD TAB */}
       {activeTab === "dashboard" && (
         <>
-          {/* Stats */}
           <div
             style={{
               display: "grid",
@@ -262,7 +273,6 @@ export default function DashboardAdmin() {
             ))}
           </div>
 
-          {/* Search + Filter */}
           <div
             style={{
               display: "flex",
@@ -272,7 +282,6 @@ export default function DashboardAdmin() {
               animation: "fadeInUp 0.4s ease 0.15s both",
             }}
           >
-            {/* Search bar */}
             <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
               <Search
                 size={14}
@@ -310,8 +319,6 @@ export default function DashboardAdmin() {
                 </button>
               )}
             </div>
-
-            {/* Filter pills */}
             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
               {["All", "Pending", "In Progress", "Resolved"].map((s) => (
                 <button
@@ -345,7 +352,6 @@ export default function DashboardAdmin() {
             </div>
           </div>
 
-          {/* Ticket list */}
           {filteredTickets.length === 0 ? (
             <div
               style={{
@@ -387,6 +393,7 @@ export default function DashboardAdmin() {
                     isAdmin={true}
                     onStatusChange={handleStatusChange}
                     onCommentAdded={handleCommentAdded}
+                    onAssigned={handleAssigned}
                   />
                 </div>
               ))}
@@ -398,7 +405,6 @@ export default function DashboardAdmin() {
       {/* HISTORY TAB */}
       {activeTab === "history" && (
         <>
-          {/* Date filter */}
           <div
             className="card"
             style={{
@@ -481,7 +487,6 @@ export default function DashboardAdmin() {
             </div>
           </div>
 
-          {/* History list */}
           {loadingHistory ? (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
               <div
@@ -521,7 +526,7 @@ export default function DashboardAdmin() {
                 No history found
               </h3>
               <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-                No resolved tickets older than 1 month for this date range.
+                No resolved tickets older than 1 month.
               </p>
             </div>
           ) : (
@@ -545,11 +550,11 @@ export default function DashboardAdmin() {
                       isAdmin={true}
                       onStatusChange={handleStatusChange}
                       onCommentAdded={handleCommentAdded}
+                      onAssigned={handleAssigned}
                     />
                   </div>
                 ))}
               </div>
-
               {hasMore && (
                 <div style={{ textAlign: "center", marginTop: "24px" }}>
                   <button
@@ -558,33 +563,12 @@ export default function DashboardAdmin() {
                     className="btn btn-secondary"
                     style={{ minWidth: "140px" }}
                   >
-                    {loadingMore ? (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 14,
-                            height: 14,
-                            border: "2px solid var(--border)",
-                            borderTopColor: "var(--accent)",
-                            borderRadius: "50%",
-                            animation: "spin 0.8s linear infinite",
-                          }}
-                        />
-                        Loading...
-                      </span>
-                    ) : (
-                      `Load More (${total - history.length} remaining)`
-                    )}
+                    {loadingMore
+                      ? "Loading..."
+                      : `Load More (${total - history.length} remaining)`}
                   </button>
                 </div>
               )}
-
               {!hasMore && history.length > 0 && (
                 <p
                   style={{
@@ -601,6 +585,16 @@ export default function DashboardAdmin() {
           )}
         </>
       )}
+
+      {/* STAFF TAB */}
+      {activeTab === "staff" && (
+        <div style={{ animation: "fadeInUp 0.4s ease" }}>
+          <StaffManager />
+        </div>
+      )}
+
+      {/* ANALYTICS TAB */}
+      {activeTab === "analytics" && <AnalyticsTab />}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

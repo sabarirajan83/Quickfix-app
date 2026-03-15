@@ -23,6 +23,8 @@ app.use(express.json());
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tickets", require("./routes/ticketRoutes"));
+app.use("/api/staff", require("./routes/staffRoutes"));
+app.use("/api/analytics", require("./routes/analyticsRoutes"));
 
 app.get("/", (req, res) => res.json({ message: "QuickFix API running" }));
 

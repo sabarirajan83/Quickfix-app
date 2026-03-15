@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { Sun, Moon, LogOut, Wrench, LayoutDashboard } from "lucide-react";
 
-export default function Navbar() {
+function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -12,7 +12,6 @@ export default function Navbar() {
   );
   const [scrolled, setScrolled] = useState(false);
 
-  // Hide user section completely on login page
   const isLoginPage = location.pathname === "/login";
 
   useEffect(() => {
@@ -89,15 +88,20 @@ export default function Navbar() {
 
       {/* Right side */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-        {/* Dark mode toggle — always visible */}
+        {/* Dark mode toggle */}
         <button
           onClick={() => setDark(!dark)}
-          className="btn btn-ghost"
           style={{
             padding: "8px",
             borderRadius: "10px",
             width: 38,
             height: 38,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           title={dark ? "Light mode" : "Dark mode"}
         >
@@ -111,12 +115,20 @@ export default function Navbar() {
         {/* Only show user info if logged in AND not on login page */}
         {user && !isLoginPage && (
           <>
+            {/* Admin link */}
             {user.role === "admin" && (
               <Link
                 to="/admin"
-                className="btn btn-ghost"
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
                   padding: "8px 14px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  fontSize: "13px",
+                  fontFamily: "Syne",
+                  fontWeight: 600,
                   color:
                     location.pathname === "/admin"
                       ? "var(--accent)"
@@ -125,12 +137,39 @@ export default function Navbar() {
                     location.pathname === "/admin"
                       ? "var(--accent-light)"
                       : "transparent",
-                  textDecoration: "none",
-                  fontSize: "13px",
                 }}
               >
                 <LayoutDashboard size={14} />
                 Admin
+              </Link>
+            )}
+
+            {/* Staff link */}
+            {user.role === "staff" && (
+              <Link
+                to="/staff"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 14px",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  fontSize: "13px",
+                  fontFamily: "Syne",
+                  fontWeight: 600,
+                  color:
+                    location.pathname === "/staff"
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
+                  background:
+                    location.pathname === "/staff"
+                      ? "var(--accent-light)"
+                      : "transparent",
+                }}
+              >
+                <Wrench size={14} />
+                My Tickets
               </Link>
             )}
 
@@ -177,7 +216,11 @@ export default function Navbar() {
                   fontSize: "10px",
                   fontWeight: 700,
                   background:
-                    user.role === "admin" ? "var(--accent)" : "var(--resolved)",
+                    user.role === "admin"
+                      ? "var(--accent)"
+                      : user.role === "staff"
+                        ? "#8b5cf6"
+                        : "var(--resolved)",
                   color: "#fff",
                   padding: "2px 7px",
                   borderRadius: "100px",
@@ -189,11 +232,21 @@ export default function Navbar() {
               </span>
             </div>
 
-            {/* Logout */}
+            {/* Logout button */}
             <button
               onClick={handleLogout}
-              className="btn btn-ghost"
-              style={{ padding: "8px", width: 38, height: 38 }}
+              style={{
+                padding: "8px",
+                width: 38,
+                height: 38,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "10px",
+              }}
               title="Logout"
             >
               <LogOut size={16} style={{ color: "var(--text-secondary)" }} />
@@ -204,3 +257,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+export default Navbar;

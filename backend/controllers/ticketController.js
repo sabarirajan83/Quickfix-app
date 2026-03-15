@@ -43,6 +43,7 @@ exports.getAllTickets = async (req, res) => {
       ],
     })
       .populate("resident", "name email")
+      .populate("assignedTo", "name email specialty") // ← added
       .sort({ createdAt: -1 });
 
     res.json(tickets);
