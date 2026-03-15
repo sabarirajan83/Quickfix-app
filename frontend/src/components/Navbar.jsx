@@ -1,9 +1,30 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { Sun, Moon, LogOut, Wrench, LayoutDashboard } from "lucide-react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [dark, setDark] = useState(
+    () => localStorage.getItem("qf_theme") === "dark",
+  );
+  const [scrolled, setScrolled] = useState(false);
+
+  // Hide user section completely on login page
+  const isLoginPage = location.pathname === "/login";
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("qf_theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -11,28 +32,175 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow-md">
-      <Link to="/" className="text-xl font-bold tracking-wide">
-        🔧 QuickFix
-      </Link>
-      {user && (
-        <div className="flex items-center gap-6">
-          <span className="text-sm">
-            Hi, {user.name} [ {user.role} ]
-          </span>
-          {user.role === "admin" && (
-            <Link to="/admin" className="text-sm underline hover:text-blue-200">
-              Admin Panel
-            </Link>
-          )}
-          <button
-            onClick={handleLogout}
-            className="bg-white text-blue-700 px-3 py-1 rounded font-semibold text-sm hover:bg-blue-100 transition"
-          >
-            Logout
-          </button>
+    <nav
+      style={{
+        background: scrolled ? "var(--bg-secondary)" : "transparent",
+        borderBottom: scrolled
+          ? "1px solid var(--border)"
+          : "1px solid transparent",
+        backdropFilter: scrolled ? "blur(12px)" : "none",
+        boxShadow: scrolled ? "var(--shadow)" : "none",
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        transition: "all 0.3s ease",
+        padding: "0 24px",
+        height: "64px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+      }}
+    >
+      {/* Logo */}
+      <Link
+        to="/"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          textDecoration: "none",
+        }}
+      >
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            background: "var(--accent)",
+            borderRadius: "10px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 12px rgba(59,130,246,0.4)",
+          }}
+        >
+          <Wrench size={18} color="#fff" />
         </div>
-      )}
+        <span
+          style={{
+            fontFamily: "Syne",
+            fontWeight: 800,
+            fontSize: "18px",
+            color: "var(--text-primary)",
+          }}
+        >
+          Quick<span style={{ color: "var(--accent)" }}>Fix</span>
+        </span>
+      </Link>
+
+      {/* Right side */}
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* Dark mode toggle — always visible */}
+        <button
+          onClick={() => setDark(!dark)}
+          className="btn btn-ghost"
+          style={{
+            padding: "8px",
+            borderRadius: "10px",
+            width: 38,
+            height: 38,
+          }}
+          title={dark ? "Light mode" : "Dark mode"}
+        >
+          {dark ? (
+            <Sun size={16} style={{ color: "var(--text-secondary)" }} />
+          ) : (
+            <Moon size={16} style={{ color: "var(--text-secondary)" }} />
+          )}
+        </button>
+
+        {/* Only show user info if logged in AND not on login page */}
+        {user && !isLoginPage && (
+          <>
+            {user.role === "admin" && (
+              <Link
+                to="/admin"
+                className="btn btn-ghost"
+                style={{
+                  padding: "8px 14px",
+                  color:
+                    location.pathname === "/admin"
+                      ? "var(--accent)"
+                      : "var(--text-secondary)",
+                  background:
+                    location.pathname === "/admin"
+                      ? "var(--accent-light)"
+                      : "transparent",
+                  textDecoration: "none",
+                  fontSize: "13px",
+                }}
+              >
+                <LayoutDashboard size={14} />
+                Admin
+              </Link>
+            )}
+
+            {/* User pill */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                background: "var(--bg-tertiary)",
+                border: "1px solid var(--border)",
+                borderRadius: "100px",
+                padding: "6px 14px 6px 8px",
+              }}
+            >
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: "var(--accent)",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  fontWeight: 700,
+                  color: "#fff",
+                  fontFamily: "Syne",
+                }}
+              >
+                {user.name?.charAt(0).toUpperCase()}
+              </div>
+              <span
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                }}
+              >
+                {user.name?.split(" ")[0]}
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  background:
+                    user.role === "admin" ? "var(--accent)" : "var(--resolved)",
+                  color: "#fff",
+                  padding: "2px 7px",
+                  borderRadius: "100px",
+                  fontFamily: "Syne",
+                  textTransform: "uppercase",
+                }}
+              >
+                {user.role}
+              </span>
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="btn btn-ghost"
+              style={{ padding: "8px", width: 38, height: 38 }}
+              title="Logout"
+            >
+              <LogOut size={16} style={{ color: "var(--text-secondary)" }} />
+            </button>
+          </>
+        )}
+      </div>
     </nav>
   );
 }

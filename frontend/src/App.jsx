@@ -5,6 +5,15 @@ import DashboardStudent from "./pages/DashboardStudent";
 import DashboardAdmin from "./pages/DashboardAdmin";
 import Navbar from "./components/Navbar";
 
+// Redirect logged-in users away from login page
+const PublicRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user)
+    return <Navigate to={user.role === "admin" ? "/admin" : "/dashboard"} />;
+  return children;
+};
+
+// Protect private routes
 const PrivateRoute = ({ children, adminRequired }) => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" />;
@@ -18,7 +27,14 @@ export default function App() {
     <BrowserRouter>
       <Navbar />
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
         <Route
           path="/dashboard"
           element={
