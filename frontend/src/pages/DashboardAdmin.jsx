@@ -3,6 +3,7 @@ import api from "../utils/api";
 import TicketCard from "../components/TicketCard";
 import StaffManager from "../components/StaffManager";
 import AnalyticsTab from "./AnalyticsTab";
+import AnnouncementManager from "../components/AnnouncementManager";
 import {
   LayoutDashboard,
   History,
@@ -10,6 +11,7 @@ import {
   X,
   Users,
   BarChart2,
+  Megaphone,
 } from "lucide-react";
 
 export default function DashboardAdmin() {
@@ -162,6 +164,11 @@ export default function DashboardAdmin() {
     { id: "history", icon: <History size={14} />, label: "History" },
     { id: "staff", icon: <Users size={14} />, label: "Staff" },
     { id: "analytics", icon: <BarChart2 size={14} />, label: "Analytics" },
+    {
+      id: "announcements",
+      icon: <Megaphone size={14} />,
+      label: "Announcements",
+    },
   ];
 
   return (
@@ -597,6 +604,13 @@ export default function DashboardAdmin() {
       {activeTab === "analytics" && <AnalyticsTab />}
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* ANNOUNCEMENTS TAB */}
+      {activeTab === "announcements" && (
+        <div style={{ animation: "fadeInUp 0.4s ease" }}>
+          <AnnouncementManager />
+        </div>
+      )}
     </div>
   );
 }

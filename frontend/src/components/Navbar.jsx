@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { Sun, Moon, LogOut, Wrench, LayoutDashboard } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -112,7 +113,6 @@ function Navbar() {
           )}
         </button>
 
-        {/* Only show user info if logged in AND not on login page */}
         {user && !isLoginPage && (
           <>
             {/* Admin link */}
@@ -139,8 +139,7 @@ function Navbar() {
                       : "transparent",
                 }}
               >
-                <LayoutDashboard size={14} />
-                Admin
+                <LayoutDashboard size={14} /> Admin
               </Link>
             )}
 
@@ -168,10 +167,12 @@ function Navbar() {
                       : "transparent",
                 }}
               >
-                <Wrench size={14} />
-                My Tickets
+                <Wrench size={14} /> My Tickets
               </Link>
             )}
+
+            {/* Notification Bell */}
+            <NotificationBell />
 
             {/* User pill */}
             <div
@@ -232,7 +233,7 @@ function Navbar() {
               </span>
             </div>
 
-            {/* Logout button */}
+            {/* Logout */}
             <button
               onClick={handleLogout}
               style={{

@@ -8,13 +8,9 @@ connectDB();
 
 const app = express();
 
-// CORS — add your frontend Azure URL here
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://yellow-moss-0f7d27800.azurestaticapps.net",
-    ],
+    origin: ["http://localhost:5173", process.env.CORS_ORIGIN],
     credentials: true,
   }),
 );
@@ -25,8 +21,10 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/tickets", require("./routes/ticketRoutes"));
 app.use("/api/staff", require("./routes/staffRoutes"));
 app.use("/api/analytics", require("./routes/analyticsRoutes"));
+app.use("/api/notifications", require("./routes/notificationRoutes"));
+app.use("/api/announcements", require("./routes/announcementRoutes"));
 
 app.get("/", (req, res) => res.json({ message: "QuickFix API running" }));
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

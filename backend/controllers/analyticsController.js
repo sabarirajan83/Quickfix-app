@@ -1,6 +1,5 @@
 const Ticket = require("../models/Ticket");
 
-// Helper to get month name
 const MONTHS = [
   "Jan",
   "Feb",
@@ -25,10 +24,28 @@ const DAYS = [
   "Saturday",
 ];
 
-// @route GET /api/analytics/overview — All analytics data in one call
+// @route GET /api/analytics/overview?from=2025-01&to=2026-03
 exports.getAnalytics = async (req, res) => {
   try {
-    const allTickets = await Ticket.find({}).populate("resident", "name");
+    // Default: last 3 months including current
+    const now = new Date();
+    let startDate, endDate;
+
+    if (req.query.from && req.query.to) {
+      // from = "2025-01", to = "2026-03"
+      const [fromYear, fromMonth] = req.query.from.split("-").map(Number);
+      const [toYear, toMonth] = req.query.to.split("-").map(Number);
+      startDate = new Date(fromYear, fromMonth - 1, 1);
+      endDate = new Date(toYear, toMonth, 0, 23, 59, 59); // last day of to-month
+    } else {
+      // Default last 3 months
+      startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    }
+
+    const allTickets = await Ticket.find({
+      createdAt: { $gte: startDate, $lte: endDate },
+    }).populate("resident", "name");
 
     // ── 1. Tickets per month ──
     const monthMap = {};
@@ -51,7 +68,7 @@ exports.getAnalytics = async (req, res) => {
       ([name, value]) => ({ name, value }),
     );
 
-    // ── 3. Average resolution time per category (in hours) ──
+    // ── 3. Average resolution time per category (hours) ──
     const resolutionMap = {};
     allTickets.forEach((t) => {
       if (t.status === "Resolved" && t.resolvedAt) {
@@ -70,7 +87,7 @@ exports.getAnalytics = async (req, res) => {
       }),
     );
 
-    // ── 4. Most complained room numbers (top 10) ──
+    // ── 4. Most complained rooms (top 10) ──
     const roomMap = {};
     allTickets.forEach((t) => {
       roomMap[t.roomNumber] = (roomMap[t.roomNumber] || 0) + 1;
@@ -80,7 +97,7 @@ exports.getAnalytics = async (req, res) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    // ── 5. Peak complaint days of the week ──
+    // ── 5. Peak complaint days ──
     const dayMap = {
       Sunday: 0,
       Monday: 0,
@@ -99,7 +116,7 @@ exports.getAnalytics = async (req, res) => {
       count,
     }));
 
-    // ── 6. Average satisfaction score per category ──
+    // ── 6. Satisfaction by category ──
     const satisfactionCategoryMap = {};
     allTickets.forEach((t) => {
       if (t.rating) {
@@ -117,7 +134,7 @@ exports.getAnalytics = async (req, res) => {
       }),
     );
 
-    // ── 7. Average satisfaction score per month ──
+    // ── 7. Satisfaction by month ──
     const satisfactionMonthMap = {};
     allTickets.forEach((t) => {
       if (t.rating && t.ratedAt) {
@@ -136,7 +153,7 @@ exports.getAnalytics = async (req, res) => {
       }),
     );
 
-    // ── 8. Summary totals ──
+    // ── 8. Summary ──
     const summary = {
       total: allTickets.length,
       pending: allTickets.filter((t) => t.status === "Pending").length,
@@ -150,6 +167,10 @@ exports.getAnalytics = async (req, res) => {
           (rated.reduce((s, t) => s + t.rating, 0) / rated.length).toFixed(1),
         );
       })(),
+      dateRange: {
+        from: startDate.toISOString(),
+        to: endDate.toISOString(),
+      },
     };
 
     res.json({

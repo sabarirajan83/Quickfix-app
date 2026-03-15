@@ -1,6 +1,8 @@
 const Ticket = require("../models/Ticket");
+const User = require("../models/User");
+const { createNotification } = require("./notificationController");
 
-// @route POST /api/tickets — Resident creates a ticket
+// @route POST /api/tickets
 exports.createTicket = async (req, res) => {
   const { title, roomNumber, category, description, priority } = req.body;
   try {
@@ -12,13 +14,25 @@ exports.createTicket = async (req, res) => {
       priority: priority || "Medium",
       resident: req.user._id,
     });
+
+    // Notify all admins
+    const admins = await User.find({ role: "admin" });
+    for (const admin of admins) {
+      await createNotification({
+        userId: admin._id,
+        message: `New ticket: "${title}" from Room ${roomNumber}`,
+        type: "new_ticket",
+        ticketId: ticket._id,
+      });
+    }
+
     res.status(201).json(ticket);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// @route GET /api/tickets/my — Resident views their own tickets
+// @route GET /api/tickets/my
 exports.getMyTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ resident: req.user._id }).sort({
@@ -30,7 +44,7 @@ exports.getMyTickets = async (req, res) => {
   }
 };
 
-// @route GET /api/tickets — Admin views ALL active tickets
+// @route GET /api/tickets
 exports.getAllTickets = async (req, res) => {
   try {
     const oneMonthAgo = new Date();
@@ -43,7 +57,7 @@ exports.getAllTickets = async (req, res) => {
       ],
     })
       .populate("resident", "name email")
-      .populate("assignedTo", "name email specialty") // ← added
+      .populate("assignedTo", "name email specialty")
       .sort({ createdAt: -1 });
 
     res.json(tickets);
@@ -52,7 +66,7 @@ exports.getAllTickets = async (req, res) => {
   }
 };
 
-// @route GET /api/tickets/history — Admin views old resolved tickets (paginated)
+// @route GET /api/tickets/history
 exports.getTicketHistory = async (req, res) => {
   try {
     const oneMonthAgo = new Date();
@@ -61,20 +75,18 @@ exports.getTicketHistory = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-
     const { from, to } = req.query;
 
-    // Build date filter
     let dateFilter = {};
     if (from || to) {
       if (from) dateFilter.$gte = new Date(from);
       if (to) {
         const toDate = new Date(to);
-        toDate.setHours(23, 59, 59, 999); // include full end day
+        toDate.setHours(23, 59, 59, 999);
         dateFilter.$lte = toDate;
       }
     } else {
-      dateFilter.$lt = oneMonthAgo; // default: older than 1 month
+      dateFilter.$lt = oneMonthAgo;
     }
 
     const filter = { status: "Resolved", resolvedAt: dateFilter };
@@ -82,6 +94,7 @@ exports.getTicketHistory = async (req, res) => {
     const [tickets, total] = await Promise.all([
       Ticket.find(filter)
         .populate("resident", "name email")
+        .populate("assignedTo", "name email specialty")
         .sort({ resolvedAt: -1 })
         .skip(skip)
         .limit(limit),
@@ -100,12 +113,13 @@ exports.getTicketHistory = async (req, res) => {
   }
 };
 
-// @route PUT /api/tickets/:id — Admin updates ticket status
+// @route PUT /api/tickets/:id
 exports.updateTicketStatus = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ message: "Ticket not found" });
 
+    const oldStatus = ticket.status;
     ticket.status = req.body.status || ticket.status;
 
     if (req.body.status === "Resolved" && !ticket.resolvedAt) {
@@ -116,13 +130,24 @@ exports.updateTicketStatus = async (req, res) => {
     }
 
     const updated = await ticket.save();
+
+    // Notify resident on status change
+    if (req.body.status && req.body.status !== oldStatus) {
+      await createNotification({
+        userId: ticket.resident,
+        message: `Your ticket "${ticket.title}" is now ${req.body.status}`,
+        type: "ticket_update",
+        ticketId: ticket._id,
+      });
+    }
+
     res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// @route POST /api/tickets/:id/comment — Admin adds a comment
+// @route POST /api/tickets/:id/comment
 exports.addComment = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -135,13 +160,22 @@ exports.addComment = async (req, res) => {
     });
 
     await ticket.save();
+
+    // Notify resident about new comment
+    await createNotification({
+      userId: ticket.resident,
+      message: `Admin added a note on your ticket "${ticket.title}"`,
+      type: "ticket_update",
+      ticketId: ticket._id,
+    });
+
     res.status(201).json(ticket);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// @route GET /api/tickets/stats — Admin gets ticket counts
+// @route GET /api/tickets/stats
 exports.getStats = async (req, res) => {
   try {
     const oneMonthAgo = new Date();
