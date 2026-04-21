@@ -10,7 +10,11 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173", process.env.CORS_ORIGIN],
+    origin: [
+      "http://localhost:5173",
+      "https://yellow-moss-0f7d27800.4.azurestaticapps.net",
+      process.env.CORS_ORIGIN,
+    ].filter(Boolean),
     credentials: true,
   }),
 );
